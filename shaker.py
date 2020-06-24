@@ -6,9 +6,15 @@ from bs4 import BeautifulSoup
 import time
 import threading
 import pprint
+from xlwt import Workbook
+
+# workbook is created
+wb = Workbook()
+
 
 # global variables / settings
 FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
+FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances?page=2'
 
 
 '''

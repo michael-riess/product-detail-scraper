@@ -14,7 +14,10 @@ wb = Workbook()
 
 # global variables / settings
 FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
-FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances?page=2'
+...
+for i 
+    
+...
 
 
 '''

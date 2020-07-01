@@ -29,6 +29,13 @@ wb.save('xlwt example.xls')
 
 # global variables / settings
 FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
+<<<<<<< HEAD
+=======
+...
+for i 
+    
+...
+>>>>>>> ab576d1e3abfb78f5f93a3285baef00ea41cd79c
 
 def LimitProduct():
     x=0

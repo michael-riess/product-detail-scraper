@@ -24,7 +24,6 @@ sheet1.write(0, 7, '정가')
 sheet1.write(0, 8, '세일가')
 sheet1.write(0, 9, '수량')
 sheet1.write(0, 10, '판매가')
-
 wb.save('xlwt example.xls')
 
 

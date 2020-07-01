@@ -11,16 +11,38 @@ from xlwt import Workbook
 # workbook is created
 wb = Workbook()
 
+# add_sheet is used to create sheet.
+sheet1 = wb.add_sheet('sheet1')
+
+sheet1.write(0, 1, '제품번호')
+sheet1.write(0, 2, '제품 SKU')
+sheet1.write(0, 3, '옵션명')
+sheet1.write(0, 4, '이미지(300x300)')
+sheet1.write(0, 5, '이미지(900x900)')
+sheet1.write(0, 6, '판매가')
+sheet1.write(0, 7, '정가')
+sheet1.write(0, 8, '세일가')
+sheet1.write(0, 9, '수량')
+sheet1.write(0, 10, '판매가')
+
+wb.save('xlwt example.xls')
+
 
 # global variables / settings
 FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
-FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances?page=2'
 
+def LimitProduct():
+    x=0
+    while x < 10:
+        if 'https://www.fragrancenet.com/fragrances?page=x' != 'https://www.fragrancenet.com/fragrances?page=x+1':
+            return LimitProduct
+            return False
 
 '''
 simple function for comparing strings
 strings match if they are the same, excluding case
 '''
+
 def inputCompare(x, y):
     if len(x) > 0 and len(y) > 0:
         return x.lower() == y.lower()
@@ -66,6 +88,9 @@ def mapProductDetails(group_id, options):
             'id': group_id, # the id used to group variants of the same product i.e. product options
             'sku': key,
             'name': value.get('SIZE_default'),
+            '''
+            'brand': value.get(),
+            '''
             'img': value.get('img'),
             'zoom_img': value.get('zoom_img'),
             'list_price': value.get('price_int'),

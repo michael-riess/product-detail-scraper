@@ -29,20 +29,11 @@ wb.save('xlwt example.xls')
 
 # global variables / settings
 FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
-<<<<<<< HEAD
-=======
-...
-for i 
-    
-...
->>>>>>> ab576d1e3abfb78f5f93a3285baef00ea41cd79c
 
-def LimitProduct():
-    x=0
-    while x < 10:
-        if 'https://www.fragrancenet.com/fragrances?page=x' != 'https://www.fragrancenet.com/fragrances?page=x+1':
-            return LimitProduct
-            return False
+def LimitProduct(items, previous_items):
+     items[0] = previous_items[0]
+ 
+        
 
 '''
 simple function for comparing strings
@@ -124,6 +115,7 @@ def commandLineQuerier():
 
 
 
+
 '''
 Fetches and returns option details for given product
 '''
@@ -152,28 +144,38 @@ def fetchDetails(index, url):
 Fetches and prints all fragrance product data details
 '''
 def fetchItems():
-    try:
-        # get website data
-        response = requests.get(FRAGRANCE_API_ROOT)
+    x=1
+    previous_items = [None]
+    while(True):
+        try:
+            # get website data
+            response = requests.get(FRAGRANCE_API_ROOT + '?page=' + str(x))
 
-        # parse website data
-        soup = BeautifulSoup(response.text, 'html.parser')
+            # parse website data
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-        # select product items
-        items = soup.select('.resultItem > section > a')
+            # select product items
+            items = soup.select('.resultItem > section > a')
 
-        # collect product details
-        products = []
-        for index, item in enumerate(items):
-            # add product details to list
-            products += fetchDetails(index, item['href'])
-        
-        # print all product details
-        pprinter = pprint.PrettyPrinter(depth=4)
-        pprinter.pprint(products)
+            # collect product details
+            products = []
+            for index, item in enumerate(items):
+                # add product details to list
+                products += fetchDetails(index, item['href'])
+            
+            if LimitProduct(items, previous_items):
+                break
+            else: 
+                # print all product details
+                pprinter = pprint.PrettyPrinter(depth=4)
+                pprinter.pprint(products)
 
-    except Exception as error:
-        print('Exception occurred\n', error)
+            previous_items = items
+            x+=1
+
+
+        except Exception as error:
+            print('Exception occurred\n', error)
 
 
 

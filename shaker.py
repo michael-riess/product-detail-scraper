@@ -6,33 +6,30 @@ from bs4 import BeautifulSoup
 import time
 import threading
 import pprint
-from xlwt import Workbook
+import xlsxwriter
+# Create workbook
+workbook = xlsxwriter.Workbook('Productinfo.xlsx')
+worksheet = workbook.add_worksheet()
+row = 0
+col = 0
 
-# workbook is created
-wb = Workbook()
+# Iternate over the data and write it out row by row
+for group_id, key, value.get('SIZE_default'), value.get('img'), value.get('zoom_img'), value.get('price_int'), value.get('retail_price_int'), value.get('discount_price_int'), value.get('quantity') in (X):
+    worksheet.write(row, col,      group_id)
+    worksheet.write(row, col, + 1, value.get('SIZE_default'))
+    worksheet.write(row, col, + 2, value.get('img'))
+    worksheet.write(row, col, + 3, value.get('zoom_img'))
+    worksheet.write(row, col, + 4, value.get('price_int'))
+    worksheet.write(row, col, + 5, value.get('retail_price_int'))
+    worksheet.write(row, col, + 6, value.get('discount_price_int'))
+    worksheet.write(row, col, + 7, value.get('quantity'))
+    row += 1
 
-# add_sheet is used to create sheet.
-sheet1 = wb.add_sheet('sheet1')
-
-sheet1.write(0, 1, '제품번호')
-sheet1.write(0, 2, '제품 SKU')
-sheet1.write(0, 3, '옵션명')
-sheet1.write(0, 4, '이미지(300x300)')
-sheet1.write(0, 5, '이미지(900x900)')
-sheet1.write(0, 6, '판매가')
-sheet1.write(0, 7, '정가')
-sheet1.write(0, 8, '세일가')
-sheet1.write(0, 9, '수량')
-sheet1.write(0, 10, '판매가')
-wb.save('xlwt example.xls')
+workbook.close()
 
 
 # global variables / settings
 FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
-<<<<<<< HEAD
-=======
-
->>>>>>> 3ca8d64eae4e39a948eeeb2898e14f3d56c6eb2c
 
 def LimitProduct(items, previous_items):
      items[0] = previous_items[0]
@@ -100,8 +97,7 @@ def mapProductDetails(group_id, options):
             'quantity': value.get('quantity'),
         })
     return products
-
-
+    
 
 '''
 Reads command line inputs and runs associated functions

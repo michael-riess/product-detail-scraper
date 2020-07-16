@@ -9,25 +9,26 @@ import pprint
 import xlsxwriter
 
 # Create workbook
-workbook = xlsxwriter.Workbook('Productinfo.xlsx')
+workbook = xlsxwriter.Workbook('제품정보.xlsx')
 worksheet = workbook.add_worksheet()
 row = 0
 col = 0
 
 # Iternate over the data and write it out row by row
 def writeToFile(x):
+    global row
     for value in x:
-        worksheet.write(row, col, value.id)
-        worksheet.write(row, col, value.sku)
-        worksheet.write(row, col, + 1, value.name)
-        worksheet.write(row, col, + 2, value.img)
-        worksheet.write(row, col, + 3, value.zoom_img)
-        worksheet.write(row, col, + 4, value.list_price)
-        worksheet.write(row, col, + 5, value.retail_price)
-        worksheet.write(row, col, + 6, value.sale_price)
-        worksheet.write(row, col, + 7, value.quantity)
+        worksheet.write(row, col, value.get('id'))
+        worksheet.write(row, col + 1, value.get('sku'))
+        worksheet.write(row, col + 2, value.get('name'))
+        worksheet.write(row, col + 3, value.get('img'))
+        worksheet.write(row, col + 4, value.get('zoom_img'))
+        worksheet.write(row, col + 5, value.get('list_price'))
+        worksheet.write(row, col + 6, value.get('retail_price'))
+        worksheet.write(row, col + 7, value.get('sale_price'))
+        worksheet.write(row, col + 8, value.get('quantity'))
         row += 1
-    workbook.close()
+    
 
 
 # global variables / settings
@@ -147,8 +148,10 @@ Fetches and prints all fragrance product data details
 '''
 def fetchItems():
     x=1
+    total = 0
     previous_items = [None]
-    while(True):
+    while x < 2:
+        print(x)
         try:
             # get website data
             response = requests.get(FRAGRANCE_API_ROOT + '?page=' + str(x))
@@ -163,7 +166,7 @@ def fetchItems():
             products = []
             for index, item in enumerate(items):
                 # add product details to list
-                products += fetchDetails(index, item['href'])
+                products += fetchDetails(index + total, item['href'])
             
             if LimitProduct(items, previous_items):
                 break
@@ -171,15 +174,14 @@ def fetchItems():
                 # print all product details
                 pprinter = pprint.PrettyPrinter(depth=4)
                 pprinter.pprint(products)
-
+                writeToFile(products)
             previous_items = items
-            x+=1
+            total += len(items)
 
 
         except Exception as error:
             print('Exception occurred\n', error)
-
-
+    workbook.close()
 
 # start querying cli
 commandLineQuerier()

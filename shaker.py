@@ -7,6 +7,7 @@ import time
 import threading
 import pprint
 import xlsxwriter
+
 # Create workbook
 workbook = xlsxwriter.Workbook('Productinfo.xlsx')
 worksheet = workbook.add_worksheet()
@@ -14,18 +15,19 @@ row = 0
 col = 0
 
 # Iternate over the data and write it out row by row
-for group_id, key, value.get('SIZE_default'), value.get('img'), value.get('zoom_img'), value.get('price_int'), value.get('retail_price_int'), value.get('discount_price_int'), value.get('quantity') in (X):
-    worksheet.write(row, col,      group_id)
-    worksheet.write(row, col, + 1, value.get('SIZE_default'))
-    worksheet.write(row, col, + 2, value.get('img'))
-    worksheet.write(row, col, + 3, value.get('zoom_img'))
-    worksheet.write(row, col, + 4, value.get('price_int'))
-    worksheet.write(row, col, + 5, value.get('retail_price_int'))
-    worksheet.write(row, col, + 6, value.get('discount_price_int'))
-    worksheet.write(row, col, + 7, value.get('quantity'))
-    row += 1
-
-workbook.close()
+def writeToFile(x):
+    for value in x:
+        worksheet.write(row, col, value.id)
+        worksheet.write(row, col, value.sku)
+        worksheet.write(row, col, + 1, value.name)
+        worksheet.write(row, col, + 2, value.img)
+        worksheet.write(row, col, + 3, value.zoom_img)
+        worksheet.write(row, col, + 4, value.list_price)
+        worksheet.write(row, col, + 5, value.retail_price)
+        worksheet.write(row, col, + 6, value.sale_price)
+        worksheet.write(row, col, + 7, value.quantity)
+        row += 1
+    workbook.close()
 
 
 # global variables / settings

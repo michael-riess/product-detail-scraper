@@ -140,11 +140,16 @@ def fetchDetails(index, url):
     # select script node with detail data
     node = list(filter(nodeHasDetailData, soup.find_all('script')))[0]
 
+    node_2 = list(soup.find_all('script', type='optimize-js'))[::-1][0]
+
     # parse json product options data from node
     options = parseProductOptionsDetails(node)
 
     # parse json newproduct options data from node
-    group = parseProductGroupDetails(node)
+    group = parseProductGroupDetails(node_2)
+
+    pprinter = pprint.PrettyPrinter(depth=4)
+    pprinter.pprint(group)
     
     # maps details for each product into list item
     details = mapProductDetails(index, options)
@@ -163,13 +168,12 @@ def parseProductGroupDetails(node):
 
     # find end location of details
     end = text.find('"gender"')
-    
-    # get the value between start and end, and strip out all unneeded whitespace
-    productView = text[start + 17: end + 12].strip()
 
-    print(productView)
+    # get the value between start and end, and strip out all unneeded whitespace
+    productView = text[start + 17: end + 13].strip()
+
     # return value as JSON
-    return productView
+    return json.loads(productView)
 
 '''
 Fetches and prints all fragrance product data details

@@ -21,12 +21,13 @@ def writeToFile(x):
         worksheet.write(row, col, value.get('id'))
         worksheet.write(row, col + 1, value.get('sku'))
         worksheet.write(row, col + 2, value.get('name'))
-        worksheet.write(row, col + 3, value.get('img'))
-        worksheet.write(row, col + 4, value.get('zoom_img'))
-        worksheet.write(row, col + 5, value.get('list_price'))
-        worksheet.write(row, col + 6, value.get('retail_price'))
-        worksheet.write(row, col + 7, value.get('sale_price'))
-        worksheet.write(row, col + 8, value.get('quantity'))
+        worksheet.write(row, col + 3, value.get('brand_designer'))
+        worksheet.write(row, col + 4, value.get('img'))
+        worksheet.write(row, col + 5, value.get('zoom_img'))
+        worksheet.write(row, col + 6, value.get('list_price'))
+        worksheet.write(row, col + 7, value.get('retail_price'))
+        worksheet.write(row, col + 8, value.get('sale_price'))
+        worksheet.write(row, col + 9, value.get('gender'))
         row += 1
     
 
@@ -85,19 +86,26 @@ Maps product values
 def mapProductDetails(group_id, options):
     products = []
     for key, value in options.items():
+        brand_designer = ''
+        brand = value.get('brand')
+        designer = value.get('designer')
+        if brand is not None and designer is not None:
+            brand_designer = brand + ' by ' + designer
+        elif brand is not None:
+            brand_designer = brand
+        else:
+            brand_designer = designer
         products.append({
             'id': group_id, # the id used to group variants of the same product i.e. product options
             'sku': key,
             'name': value.get('SIZE_default'),
-            '''
-            'brand': value.get(),
-            '''
+            'brand_designer': brand_designer,
             'img': value.get('img'),
             'zoom_img': value.get('zoom_img'),
             'list_price': value.get('price_int'),
             'retail_price': value.get('retail_price_int'),
             'sale_price': value.get('discount_price_int'),
-            'quantity': value.get('quantity'),
+            'gender': value.get('gender'),
         })
     return products
     
@@ -135,6 +143,9 @@ def fetchDetails(index, url):
     # parse json product options data from node
     options = parseProductOptionsDetails(node)
 
+    # parse json newproduct options data from node
+    group = parseProductGroupDetails(node)
+    
     # maps details for each product into list item
     details = mapProductDetails(index, options)
 
@@ -142,6 +153,23 @@ def fetchDetails(index, url):
     return details
 
 
+def parseProductGroupDetails(node):
+
+    # convert node to string
+    text = node.string
+
+    # find starting location of details
+    start = text.find('productView_id')
+
+    # find end location of details
+    end = text.find('"gender"')
+    
+    # get the value between start and end, and strip out all unneeded whitespace
+    productView = text[start + 17: end + 12].strip()
+
+    print(productView)
+    # return value as JSON
+    return productView
 
 '''
 Fetches and prints all fragrance product data details
@@ -150,8 +178,7 @@ def fetchItems():
     x=1
     total = 0
     previous_items = [None]
-    while x < 2:
-        print(x)
+    while x < 5:
         try:
             # get website data
             response = requests.get(FRAGRANCE_API_ROOT + '?page=' + str(x))
@@ -176,6 +203,7 @@ def fetchItems():
                 pprinter.pprint(products)
                 writeToFile(products)
             previous_items = items
+            x+=1
             total += len(items)
 
 

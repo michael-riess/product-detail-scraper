@@ -17,7 +17,19 @@ col = 0
 # Iternate over the data and write it out row by row
 def writeToFile(x):
     global row
+    worksheet.write(row, col, "아이디")
+    worksheet.write(row, col + 1, "SKU")
+    worksheet.write(row, col + 2, "제품명")
+    worksheet.write(row, col + 3, "브랜드")
+    worksheet.write(row, col + 4, "이미지 300")
+    worksheet.write(row, col + 5, "이미지 900")
+    worksheet.write(row, col + 6, "List 가격")
+    worksheet.write(row, col + 7, "Retail 가격")
+    worksheet.write(row, col + 8, "세일 가격")
+    worksheet.write(row, col + 9, "재고")
+    worksheet.write(row, col + 10, "성별")
     for value in x:
+        row += 1
         worksheet.write(row, col, value.get('id'))
         worksheet.write(row, col + 1, value.get('sku'))
         worksheet.write(row, col + 2, value.get('name'))
@@ -27,8 +39,9 @@ def writeToFile(x):
         worksheet.write(row, col + 6, value.get('list_price'))
         worksheet.write(row, col + 7, value.get('retail_price'))
         worksheet.write(row, col + 8, value.get('sale_price'))
-        worksheet.write(row, col + 9, value.get('gender'))
-        row += 1
+        worksheet.write(row, col + 9, value.get('stock_warn'))
+        worksheet.write(row, col + 10, value.get('gender'))
+        
     
 
 
@@ -36,7 +49,8 @@ def writeToFile(x):
 FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
 
 def LimitProduct(items, previous_items):
-     items[0] = previous_items[0]
+    return items[0] == previous_items[0]
+       
  
         
 
@@ -83,18 +97,24 @@ def parseProductOptionsDetails(node):
 '''
 Maps product values 
 '''
-def mapProductDetails(group_id, options):
+def mapProductDetails(group_id, options, group):
     products = []
+    brand_designer = ''
+    brand = group.get('brand')
+    designer = group.get('designer')
+    gender = group.get('gender')
+    if brand is not None and designer is not None:
+        brand_designer = brand + ' by ' + designer
+    elif brand is not None:
+        brand_designer = brand
+    else:
+        brand_designer = designer
     for key, value in options.items():
-        brand_designer = ''
-        brand = value.get('brand')
-        designer = value.get('designer')
-        if brand is not None and designer is not None:
-            brand_designer = brand + ' by ' + designer
-        elif brand is not None:
-            brand_designer = brand
-        else:
-            brand_designer = designer
+
+        stockWarn = value.get("stock_warn")
+        if stockWarn == 0:
+            stockWarn = 'enough quantity'
+
         products.append({
             'id': group_id, # the id used to group variants of the same product i.e. product options
             'sku': key,
@@ -105,7 +125,8 @@ def mapProductDetails(group_id, options):
             'list_price': value.get('price_int'),
             'retail_price': value.get('retail_price_int'),
             'sale_price': value.get('discount_price_int'),
-            'gender': value.get('gender'),
+            'stock_warn': stockWarn,
+            'gender': gender,
         })
     return products
     
@@ -148,11 +169,8 @@ def fetchDetails(index, url):
     # parse json newproduct options data from node
     group = parseProductGroupDetails(node_2)
 
-    pprinter = pprint.PrettyPrinter(depth=4)
-    pprinter.pprint(group)
-    
     # maps details for each product into list item
-    details = mapProductDetails(index, options)
+    details = mapProductDetails(index, options, group)
 
     # return list of product details
     return details
@@ -182,7 +200,7 @@ def fetchItems():
     x=1
     total = 0
     previous_items = [None]
-    while x < 5:
+    while(True):
         try:
             # get website data
             response = requests.get(FRAGRANCE_API_ROOT + '?page=' + str(x))

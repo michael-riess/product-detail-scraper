@@ -34,9 +34,7 @@ def writeToFile(content):
 
 
 def endOfProductsReached(items, previous_items):
-    end = items is not None and previous_items is not None and items[0] == previous_items[0]
-    print(end)
-    return end
+    return items is not None and previous_items is not None and items[0] == previous_items[0]
         
 
 '''

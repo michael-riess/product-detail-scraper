@@ -8,57 +8,41 @@ import threading
 import pprint
 import xlsxwriter
 
-# Create workbook
-workbook = xlsxwriter.Workbook('제품정보.xlsx')
-worksheet = workbook.add_worksheet()
+# global variables / settings
+FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
 row = 0
 col = 0
 
-# Iternate over the data and write it out row by row
-def writeToFile(x):
+# Create workbook
+workbook = xlsxwriter.Workbook('제품정보.xlsx')
+worksheet = workbook.add_worksheet()
+
+# Initialize document with titles
+titles = ['아디디', 'SKU', '제품명', '브랜드', '이미지 300', '이미지 900', 'List 가격', 'Retail 가격', '세일 가격', '재고', '성별']
+for index, title in enumerate(titles):
+    worksheet.write(row, index, title)
+
+
+# Iterate over the data and write it out row by row
+def writeToFile(content):
     global row
-    worksheet.write(row, col, "아이디")
-    worksheet.write(row, col + 1, "SKU")
-    worksheet.write(row, col + 2, "제품명")
-    worksheet.write(row, col + 3, "브랜드")
-    worksheet.write(row, col + 4, "이미지 300")
-    worksheet.write(row, col + 5, "이미지 900")
-    worksheet.write(row, col + 6, "List 가격")
-    worksheet.write(row, col + 7, "Retail 가격")
-    worksheet.write(row, col + 8, "세일 가격")
-    worksheet.write(row, col + 9, "재고")
-    worksheet.write(row, col + 10, "성별")
-    for value in x:
+    keys = ['id', 'sku', 'name', 'brand_designer', 'img', 'zoom_img', 'list_price', 'retail_price', 'sale_price', 'stock_warn', 'gender']
+    for value in content:
         row += 1
-        worksheet.write(row, col, value.get('id'))
-        worksheet.write(row, col + 1, value.get('sku'))
-        worksheet.write(row, col + 2, value.get('name'))
-        worksheet.write(row, col + 3, value.get('brand_designer'))
-        worksheet.write(row, col + 4, value.get('img'))
-        worksheet.write(row, col + 5, value.get('zoom_img'))
-        worksheet.write(row, col + 6, value.get('list_price'))
-        worksheet.write(row, col + 7, value.get('retail_price'))
-        worksheet.write(row, col + 8, value.get('sale_price'))
-        worksheet.write(row, col + 9, value.get('stock_warn'))
-        worksheet.write(row, col + 10, value.get('gender'))
-        
-    
+        for index, key in enumerate(keys):
+            worksheet.write(row, index, value.get(key))
 
 
-# global variables / settings
-FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
-
-def LimitProduct(items, previous_items):
-    return items[0] == previous_items[0]
-       
- 
+def endOfProductsReached(items, previous_items):
+    end = items is not None and previous_items is not None and items[0] == previous_items[0]
+    print(end)
+    return end
         
 
 '''
 simple function for comparing strings
 strings match if they are the same, excluding case
 '''
-
 def inputCompare(x, y):
     if len(x) > 0 and len(y) > 0:
         return x.lower() == y.lower()
@@ -67,7 +51,6 @@ def inputCompare(x, y):
 # determine if Node contains product detail data
 def nodeHasDetailData(node):
     return node.string is not None and node.string.find('var variant_id') != -1
-
 
 
 '''
@@ -82,7 +65,7 @@ def parseProductOptionsDetails(node):
 
     # find end location of details
     end = text.find('has_reviews')
-    
+
     # get the value between start and end, and strip out all unneeded whitespace
     sku_map = text[start + 10: end].strip()
 
@@ -146,8 +129,6 @@ def commandLineQuerier():
             print('\nUnknown Command: please enter only valid commands.\nEnter (help) for more details.')
 
 
-
-
 '''
 Fetches and returns option details for given product
 '''
@@ -158,10 +139,22 @@ def fetchDetails(index, url):
     # parse website data
     soup = BeautifulSoup(response.text, 'lxml')
 
-    # select script node with detail data
-    node = list(filter(nodeHasDetailData, soup.find_all('script')))[0]
+    node = None
+    node_2 = None
 
-    node_2 = list(soup.find_all('script', type='optimize-js'))[::-1][0]
+    # select script node with detail data
+    scripts = list(filter(nodeHasDetailData, soup.find_all('script')))
+    if len(scripts) > 0:
+        node = scripts[0]
+    else:
+        return None
+
+    # select script node with group detail data
+    scripts_2 = list(soup.find_all('script', type='optimize-js'))
+    if len(scripts) > 0:
+        node_2 = scripts_2[::-1][0]
+    else:
+        return None
 
     # parse json product options data from node
     options = parseProductOptionsDetails(node)
@@ -193,11 +186,12 @@ def parseProductGroupDetails(node):
     # return value as JSON
     return json.loads(productView)
 
+
 '''
 Fetches and prints all fragrance product data details
 '''
 def fetchItems():
-    x=1
+    x = 0
     total = 0
     previous_items = [None]
     while(True):
@@ -215,23 +209,23 @@ def fetchItems():
             products = []
             for index, item in enumerate(items):
                 # add product details to list
-                products += fetchDetails(index + total, item['href'])
-            
-            if LimitProduct(items, previous_items):
+                details = fetchDetails(index + total, item['href'])
+                if details is not None:
+                    products += details
+                    total += len(items)
+
+            if endOfProductsReached(items, previous_items):
                 break
-            else: 
-                # print all product details
-                pprinter = pprint.PrettyPrinter(depth=4)
-                pprinter.pprint(products)
+            else:
                 writeToFile(products)
             previous_items = items
-            x+=1
-            total += len(items)
-
+            x += 1
 
         except Exception as error:
             print('Exception occurred\n', error)
+
     workbook.close()
+
 
 # start querying cli
 commandLineQuerier()

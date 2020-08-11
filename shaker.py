@@ -189,7 +189,7 @@ def parseProductGroupDetails(node):
 Fetches and prints all fragrance product data details
 '''
 def fetchItems():
-    x = 0
+    x = 400
     total = 0
     previous_items = [None]
     while(True):
@@ -205,12 +205,17 @@ def fetchItems():
 
             # collect product details
             products = []
+            last = None
+            group_total = 0
             for index, item in enumerate(items):
                 # add product details to list
                 details = fetchDetails(index + total, item['href'])
+                last = item['href']
                 if details is not None:
+                    group_total += 1
                     products += details
-                    total += len(items)
+            
+            total += group_total
 
             if endOfProductsReached(items, previous_items):
                 break

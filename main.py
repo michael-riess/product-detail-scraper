@@ -1,14 +1,30 @@
-import requests
-import json
+import os
 import sys
-import random
-from bs4 import BeautifulSoup
+import re
 import time
 import threading
-import pprint
+import requests
+import random
+import json
+from PyInquirer import prompt
+from rich.console import Console
+from rich.table import Table
+from rich.progress import (
+    Progress,
+    BarColumn,
+    TimeRemainingColumn
+)
+from art import text2art
+from bs4 import BeautifulSoup
 import xlsxwriter
 
+# Styles
+# https://coolors.co/ffbe0b-fb5607-ff006e-8338ec-3a86ff-16db93
+
 # global variables / settings
+console = Console()
+console.clear()
+
 FRAGRANCE_API_ROOT = 'https://www.fragrancenet.com/fragrances'
 row = 0
 col = 0
@@ -16,6 +32,35 @@ col = 0
 # Create workbook
 workbook = xlsxwriter.Workbook('제품정보.xlsx')
 worksheet = workbook.add_worksheet()
+
+PRODUCT_SITE_OPTIONS = [
+    {
+        'type': 'list',
+        'name': 'endpoint',
+        'message': 'What products do you want to scrape?',
+        'choices': [
+            'Fragrances',
+            { 
+                'name': 'Skincare',
+                'disabled': 'Unavailable at this time'
+            }, {
+                'name': 'Makeup',
+                'disabled': 'Unavailable at this time'
+            }, {
+                'name': 'Haircare',
+                'disabled': 'Unavailable at this time'
+            }, {
+                'name': 'Aromatherapy',
+                'disabled': 'Unavailable at this time'
+            }, {
+                'name': 'Candles',
+                'disabled': 'Unavailable at this time'
+            },
+            'Quit'
+        ],
+        'filter': lambda val: val.lower()
+    }
+]
 
 # Initialize document with titles
 titles = ['아디디', 'SKU', '제품명', '브랜드', '이미지 300', '이미지 900', 'List 가격', 'Retail 가격', '세일 가격', '재고', '성별']
@@ -32,19 +77,9 @@ def writeToFile(content):
         for index, key in enumerate(keys):
             worksheet.write(row, index, value.get(key))
 
-
 def endOfProductsReached(items, previous_items):
     return items is not None and previous_items is not None and items[0] == previous_items[0]
-        
 
-'''
-simple function for comparing strings
-strings match if they are the same, excluding case
-'''
-def inputCompare(x, y):
-    if len(x) > 0 and len(y) > 0:
-        return x.lower() == y.lower()
-    return False
 
 # determine if Node contains product detail data
 def nodeHasDetailData(node):
@@ -92,7 +127,7 @@ def mapProductDetails(group_id, options, group):
         brand_designer = designer
     for key, value in options.items():
 
-        stockWarn = value.get("stock_warn")
+        stockWarn = value.get('stock_warn')
         if stockWarn == 0:
             stockWarn = 'enough quantity'
 
@@ -117,20 +152,26 @@ Reads command line inputs and runs associated functions
 '''
 def commandLineQuerier():
     COMMAND_LINE_ACTIVE = True
+
+    ascii_banner = text2art('Product Data Scraper')
+    console.print(ascii_banner, style='#3a86ff')
+    
     while COMMAND_LINE_ACTIVE:
-        value = input('\nSelect Operation:\n::$ ')
-        if inputCompare(value, 'fragrances'):
+        answers = prompt(PRODUCT_SITE_OPTIONS)
+        value = answers['endpoint']
+        
+        if value == 'fragrances':
             fetchItems()
-        elif inputCompare(value, 'quit') or inputCompare(value, 'exit' or inputCompare(value, 'x')):
+        elif value == 'quit':
             COMMAND_LINE_ACTIVE = False
         else:
             print('\nUnknown Command: please enter only valid commands.\nEnter (help) for more details.')
-
 
 '''
 Fetches and returns option details for given product
 '''
 def fetchDetails(index, url):
+
     # get product detail page data
     response = requests.get(url)
 
@@ -189,10 +230,14 @@ def parseProductGroupDetails(node):
 Fetches and prints all fragrance product data details
 '''
 def fetchItems():
-    x = 400
+    x = 413
     total = 0
     previous_items = [None]
+
     while(True):
+        console.print('\nPage: ', style='bold #ffbe0b', end='')
+        console.print(x, style='bold #8338ec')
+
         try:
             # get website data
             response = requests.get(FRAGRANCE_API_ROOT + '?page=' + str(x))
@@ -203,33 +248,59 @@ def fetchItems():
             # select product items
             items = soup.select('.resultItem > section > a')
 
-            # collect product details
-            products = []
-            last = None
-            group_total = 0
-            for index, item in enumerate(items):
-                # add product details to list
-                details = fetchDetails(index + total, item['href'])
-                last = item['href']
-                if details is not None:
-                    group_total += 1
-                    products += details
-            
-            total += group_total
+            with Progress(
+                '[progress.description]{task.description}',
+                BarColumn(
+                    style='#FFBE0B',
+                    complete_style='#16DB93',
+                    pulse_style='#3A86FF',
+                    finished_style='#3A86FF'
+                ),
+                '[progress.percentage]{task.percentage:>3.0f}%',
+                TimeRemainingColumn(),
+                console=console,
+            ) as progress:
+                task = progress.add_task('[#ff006e]Scraping...', total=len(items))
+
+                # collect product details
+                products = []
+                last = None
+                group_total = 0
+                for index, item in enumerate(items):
+                    progress.update(task, advance=1)
+
+                    # add product details to list
+                    details = fetchDetails(index + total, item['href'])
+                    last = item['href']
+                    if details is not None:
+                        group_total += 1
+                        products += details
+                
+                total += group_total
+                progress.remove_task(task)
 
             if endOfProductsReached(items, previous_items):
+                if items is None or previous_items is None:
+                    console.print('Unexpected termination: ', style='bold red',end='')
+                    console.print('no products', style='underline red')
+                else:
+                    print('\033[F'*5)
+                    console.print(f':fire: :tada: :fire:  All {x} pages of product data scraped!!! :fire: :tada: :fire:\n', style='bold #FB5607')
                 break
             else:
                 writeToFile(products)
             previous_items = items
+            print('\033[F'*4)
             x += 1
 
         except Exception as error:
-            print('Exception occurred\n', error)
+            console.print('Exception occurred\n', style='bold red')
+            console.print(error)
 
     workbook.close()
 
 
 # start querying cli
 commandLineQuerier()
+console.clear()
 sys.exit

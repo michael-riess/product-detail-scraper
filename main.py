@@ -230,7 +230,7 @@ def parseProductGroupDetails(node):
 Fetches and prints all fragrance product data details
 '''
 def fetchItems():
-    x = 413
+    x = 1
     total = 0
     previous_items = [None]
 
